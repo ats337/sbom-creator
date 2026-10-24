@@ -1,0 +1,16 @@
+{
+  "target": "./examples/sample_project/legacy_c_app",
+  "format": "spdx-json",
+  "output": "sbom_from_config.spdx.json",
+  "name": "my-legacy-system",
+  "version": "2.4.0",
+  "description": "Production OCR & Imaging Backend Service",
+  "license": "Apache-2.0",
+  "copyright": "Copyright 2026 Example Corp.",
+  "creator": "Organization: Example Security Team",
+  "supplier": "Organization: Example Corp.",
+  "download_location": "https://github.com/example/my-legacy-system/releases/v2.4.0",
+  "homepage": "https://example.com/products/legacy-system",
+  "namespace_prefix": "https://example.com/spdxdocs",
+  "include_os": false
+}
