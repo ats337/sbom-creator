@@ -296,16 +296,50 @@ class ProjectScanner(BaseScanner):
             tree = ET.parse(file_path)
             root = tree.getroot()
             ns = {"m": root.tag.split("}")[0].strip("{")} if "}" in root.tag else {}
-            
-            xpath = ".//m:dependency" if ns else ".//dependency"
-            for dep in root.findall(xpath, ns):
+
+            # 1. Collect properties for variable interpolation (e.g., ${spring.version})
+            props: Dict[str, str] = {}
+            props_elem = root.find("m:properties", ns) if ns else root.find("properties")
+            if props_elem is not None:
+                for child in props_elem:
+                    tag_name = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+                    if child.text:
+                        props[tag_name] = child.text.strip()
+
+            # 2. Extract dependencies from <dependencies> or <dependencyManagement>
+            # (Excludes build plugins defined under <build><plugins>)
+            dep_nodes = []
+            for container_name in (["m:dependencies", "m:dependencyManagement/m:dependencies"] if ns else ["dependencies", "dependencyManagement/dependencies"]):
+                container = root.find(container_name, ns)
+                if container is not None:
+                    dep_nodes.extend(container.findall("m:dependency" if ns else "dependency", ns))
+
+            # Fallback if standard top-level containers not matched
+            if not dep_nodes:
+                dep_nodes = root.findall(".//m:dependency" if ns else ".//dependency", ns)
+
+            for dep in dep_nodes:
+                # Filter out test and build/compileOnly dependencies
+                # Allowed production scopes: 'compile' (default if omitted), 'runtime'
+                # Excluded scopes: 'test', 'provided', 'system', 'import'
+                scope_elem = dep.find("m:scope", ns) if ns else dep.find("scope")
+                scope = scope_elem.text.strip().lower() if scope_elem is not None and scope_elem.text else "compile"
+                if scope in ("test", "provided", "system", "import"):
+                    continue
+
                 group_elem = dep.find("m:groupId", ns) if ns else dep.find("groupId")
                 artifact_elem = dep.find("m:artifactId", ns) if ns else dep.find("artifactId")
                 ver_elem = dep.find("m:version", ns) if ns else dep.find("version")
 
                 group_id = group_elem.text.strip() if group_elem is not None and group_elem.text else "unknown"
                 artifact_id = artifact_elem.text.strip() if artifact_elem is not None and artifact_elem.text else "unknown"
-                version = ver_elem.text.strip() if ver_elem is not None and ver_elem.text else "unknown"
+                raw_ver = ver_elem.text.strip() if ver_elem is not None and ver_elem.text else "unknown"
+
+                # Variable resolution: ${property.name}
+                version = raw_ver
+                if raw_ver.startswith("${") and raw_ver.endswith("}"):
+                    var_key = raw_ver[2:-1]
+                    version = props.get(var_key, raw_ver)
 
                 name = f"{group_id}:{artifact_id}" if group_id != "unknown" else artifact_id
                 comps.append(Component(
@@ -313,8 +347,11 @@ class ProjectScanner(BaseScanner):
                     version=version,
                     language="java",
                     component_type="library",
-                    purl=f"pkg:maven/{group_id}/{artifact_id}@{version}",
-                    properties={"manifest": str(file_path.relative_to(self.root_dir))}
+                    purl=f"pkg:maven/{group_id}/{artifact_id}@{version}" if version != "unknown" else f"pkg:maven/{group_id}/{artifact_id}",
+                    properties={
+                        "scope": scope,
+                        "manifest": str(file_path.relative_to(self.root_dir))
+                    }
                 ))
         except Exception:
             pass
@@ -322,20 +359,71 @@ class ProjectScanner(BaseScanner):
 
     def _parse_gradle(self, file_path: Path) -> List[Component]:
         comps = []
+        # Production configurations: 'api', 'implementation', 'runtimeOnly'
+        # Excludes: 'testImplementation', 'testCompileOnly', 'testRuntimeOnly',
+        #           'compileOnly', 'annotationProcessor', 'classpath', etc.
+        prod_conf_pattern = re.compile(
+            r"(?<![a-zA-Z0-9_\-\.])(?:api|implementation|runtimeOnly)\s*[\(\s]"
+        )
+
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    m = re.search(r"(?:implementation|api|compileOnly|runtimeOnly)\s*[\(\"']\s*([a-zA-Z0-9_\-\.]+):([a-zA-Z0-9_\-\.]+):([a-zA-Z0-9_\-\.]+)\s*[\)\"']", line)
-                    if m:
-                        group_id, artifact_id, version = m.group(1), m.group(2), m.group(3)
+                    if not line or line.startswith("//") or line.startswith("*") or line.startswith("/*"):
+                        continue
+
+                    # Check for production configuration
+                    m_conf = prod_conf_pattern.search(line)
+                    if not m_conf:
+                        continue
+
+                    conf_name = "implementation"
+                    if "runtimeOnly" in m_conf.group(0):
+                        conf_name = "runtimeOnly"
+                    elif "api" in m_conf.group(0):
+                        conf_name = "api"
+
+                    # 1. Standard colon format: 'groupId:artifactId:version' or 'groupId:artifactId'
+                    m_coord = re.search(
+                        r"[\(\s]['\"]([a-zA-Z0-9_\-\.]+):([a-zA-Z0-9_\-\.]+)(?::([a-zA-Z0-9_\-\.]+))?['\"]",
+                        line
+                    )
+                    if m_coord:
+                        group_id = m_coord.group(1)
+                        artifact_id = m_coord.group(2)
+                        version = m_coord.group(3) or "unknown"
                         comps.append(Component(
                             name=f"{group_id}:{artifact_id}",
                             version=version,
                             language="java",
                             component_type="library",
-                            purl=f"pkg:maven/{group_id}/{artifact_id}@{version}",
-                            properties={"manifest": str(file_path.relative_to(self.root_dir))}
+                            purl=f"pkg:maven/{group_id}/{artifact_id}@{version}" if version != "unknown" else f"pkg:maven/{group_id}/{artifact_id}",
+                            properties={
+                                "scope": conf_name,
+                                "manifest": str(file_path.relative_to(self.root_dir))
+                            }
+                        ))
+                        continue
+
+                    # 2. Map-style format: group: '...', name: '...', version: '...'
+                    m_group = re.search(r"group\s*[=:]\s*['\"]([^'\"]+)['\"]", line)
+                    m_artifact = re.search(r"name\s*[=:]\s*['\"]([^'\"]+)['\"]", line)
+                    m_version = re.search(r"version\s*[=:]\s*['\"]([^'\"]+)['\"]", line)
+                    if m_group and m_artifact:
+                        group_id = m_group.group(1)
+                        artifact_id = m_artifact.group(1)
+                        version = m_version.group(1) if m_version else "unknown"
+                        comps.append(Component(
+                            name=f"{group_id}:{artifact_id}",
+                            version=version,
+                            language="java",
+                            component_type="library",
+                            purl=f"pkg:maven/{group_id}/{artifact_id}@{version}" if version != "unknown" else f"pkg:maven/{group_id}/{artifact_id}",
+                            properties={
+                                "scope": conf_name,
+                                "manifest": str(file_path.relative_to(self.root_dir))
+                            }
                         ))
         except Exception:
             pass

@@ -22,8 +22,18 @@ class TestSBOMCreator(unittest.TestCase):
         self.assertIn("react", names)
         # Check Go
         self.assertIn("github.com/gin-gonic/gin", names)
-        # Check Java
+        # Check Java (Production only)
         self.assertIn("com.google.guava:guava", names)
+        self.assertIn("org.springframework.boot:spring-boot-starter-web", names)
+        self.assertIn("org.apache.commons:commons-lang3", names)
+        self.assertIn("org.postgresql:postgresql", names)
+        self.assertIn("io.netty:netty-all", names)
+
+        # Ensure Java test & build libraries are EXCLUDED
+        self.assertNotIn("org.junit.jupiter:junit-jupiter", names)
+        self.assertNotIn("org.projectlombok:lombok", names)
+        self.assertNotIn("org.junit.platform:junit-platform-launcher", names)
+
         # Check C/C++
         self.assertIn("OpenSSL", names)
         self.assertIn("fmt", names)

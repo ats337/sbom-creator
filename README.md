@@ -18,7 +18,7 @@ Python 3の標準ライブラリのみで動作するため、追加の外部パ
 | **言語** | **Python** | `requirements.txt`, `pyproject.toml` |
 | **言語** | **TypeScript / JavaScript** | `package.json` (`dependencies`, `devDependencies`) |
 | **言語** | **Go** | `go.mod` |
-| **言語** | **Java** | `pom.xml` (Maven), `build.gradle` (Gradle) |
+| **言語** | **Java** | `pom.xml` (Maven), `build.gradle` / `build.gradle.kts` (Gradle)<br>※本番稼働用ライブラリのみ抽出（テスト用 `test`・`testImplementation`、ビルド用 `provided`・`compileOnly`・`annotationProcessor`・プラグイン等は自動除外） |
 | **言語** | **C / C++** | ① マニフェスト: `CMakeLists.txt`, `conanfile.txt`, `vcpkg.json`<br>② ビルド設定: `Makefile`, `makefile`, `GNUmakefile` (`-l<lib>`, `pkg-config`), `meson.build`, `configure.ac`<br>③ 静的解析: ソース・ヘッダ（`.c`, `.cpp`, `.h` 等）内の `#include <...>` から外部OSSライブラリ自動推定 |
 | **言語** | **C#** | `*.csproj` (NuGet `PackageReference`) |
 

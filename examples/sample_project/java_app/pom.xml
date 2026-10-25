@@ -3,16 +3,33 @@
   <groupId>com.example</groupId>
   <artifactId>sample-java-app</artifactId>
   <version>1.0.0</version>
+  <properties>
+    <spring.boot.version>3.2.3</spring.boot.version>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
-      <version>3.2.3</version>
+      <version>${spring.boot.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>33.0.0-jre</version>
+    </dependency>
+    <!-- Test library: should be excluded -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Build / compile-only library: should be excluded -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>1.18.30</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 </project>
