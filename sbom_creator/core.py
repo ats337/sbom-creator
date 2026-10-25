@@ -46,7 +46,8 @@ def generate_sbom(
         tool_name=cfg.get("tool_name") or "sbom-creator",
         tool_version=cfg.get("tool_version") or "0.1.0",
         data_license="CC0-1.0",
-        namespace_prefix=cfg.get("namespace_prefix") or "https://spdx.org/spdxdocs"
+        namespace_prefix=cfg.get("namespace_prefix") or "https://spdx.org/spdxdocs",
+        document_namespace=cfg.get("document_namespace")
     )
     if cfg.get("serial_number"):
         metadata.serial_number = cfg["serial_number"]

@@ -10,8 +10,14 @@ class SPDXFormatter(BaseFormatter):
     """Formats an SBOMDocument into SPDX v2.3 JSON representation."""
 
     def format(self, doc: SBOMDocument) -> str:
-        ns_prefix = doc.metadata.namespace_prefix.rstrip("/")
-        doc_ns = f"{ns_prefix}/{doc.metadata.target_name}-{doc.metadata.serial_number.replace('urn:uuid:', '')}"
+        if doc.metadata.document_namespace:
+            doc_ns = doc.metadata.document_namespace
+        else:
+            ns_prefix = doc.metadata.namespace_prefix.rstrip("/")
+            if doc.metadata.target_version and doc.metadata.target_version.lower() != "latest":
+                doc_ns = f"{ns_prefix}/{doc.metadata.target_name}-{doc.metadata.target_version}"
+            else:
+                doc_ns = f"{ns_prefix}/{doc.metadata.target_name}"
         
         # Prepare Root Package ID
         root_safe_name = re.sub(r"[^a-zA-Z0-9.\-]", "-", doc.metadata.target_name).strip("-") or "root"

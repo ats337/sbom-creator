@@ -49,6 +49,7 @@ class SBOMMetadata:
     homepage: Optional[str] = None
     data_license: str = "CC0-1.0"
     namespace_prefix: str = "https://spdx.org/spdxdocs"
+    document_namespace: Optional[str] = None
     serial_number: str = field(default_factory=lambda: f"urn:uuid:{uuid.uuid4()}")
     root_checksums: List[Checksum] = field(default_factory=list)
 

@@ -31,6 +31,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "tool_name": "sbom-creator",
     "tool_version": "0.1.0",
     "namespace_prefix": "https://spdx.org/spdxdocs",
+    "document_namespace": None,
     "serial_number": None,
     "include_os": False,
     "os_only": False,

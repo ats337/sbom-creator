@@ -38,8 +38,13 @@ sbom-creator/
 ├── main.py                     # CLI実行エントリポイント
 ├── sbom_creator/
 │   ├── cli.py                  # コマンドライン引数パーサー (argparse)
+│   ├── config.py               # 設定ファイル読込・マージ (優先度制御)
 │   ├── core.py                 # スキャン・出力の統括ロジック
 │   ├── models.py               # Component, SBOMDocument などのデータモデル
+│   ├── artifact.py             # パッケージ成果物バイナリ/ライブラリ検索
+│   ├── resolver.py             # バージョン/ライセンス推論・設定オーバーライド
+│   ├── cpe.py                  # NVD照合用 CPE 2.3 辞書
+│   ├── checksum.py             # 暗号学的ハッシュ計算
 │   ├── scanners/
 │   │   ├── base.py             # スキャナ抽象基底クラス
 │   │   ├── os_scanner.py       # OSおよびOSパッケージスキャナ

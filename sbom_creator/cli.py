@@ -127,9 +127,15 @@ Examples:
     )
 
     parser.add_argument(
+        "--document-namespace",
+        default=None,
+        help="SPDX documentNamespace full URI (overrides namespace-prefix/name)"
+    )
+
+    parser.add_argument(
         "--serial-number",
         default=None,
-        help="Document serial number / namespace UUID"
+        help="Document serial number (used by CycloneDX)"
     )
 
     # OS scan flags

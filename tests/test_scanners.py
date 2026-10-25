@@ -62,15 +62,24 @@ class TestSBOMCreator(unittest.TestCase):
         self.assertIn('"specVersion": "1.5"', output)
 
     def test_generate_spdx(self):
-        output = generate_sbom(target_path=str(self.sample_dir), format_name="spdx")
-        self.assertIn('"spdxVersion": "SPDX-2.3"', output)
-        self.assertIn('"relationships": [', output)
-        self.assertIn('"relationshipType": "DESCRIBES"', output)
-        self.assertIn('"relationshipType": "DEPENDS_ON"', output)
-        self.assertIn('"checksums": [', output)
-        self.assertIn('"algorithm": "SHA256"', output)
-        self.assertIn('"referenceType": "cpe23Type"', output)
-        self.assertIn('"sourceInfo":', output)
+        output1 = generate_sbom(target_path=str(self.sample_dir), format_name="spdx")
+        output2 = generate_sbom(target_path=str(self.sample_dir), format_name="spdx")
+        self.assertIn('"spdxVersion": "SPDX-2.3"', output1)
+        self.assertIn('"documentNamespace": "https://spdx.org/spdxdocs/sample_project"', output1)
+        self.assertIn('"relationships": [', output1)
+        self.assertIn('"relationshipType": "DESCRIBES"', output1)
+        self.assertIn('"relationshipType": "DEPENDS_ON"', output1)
+        self.assertIn('"checksums": [', output1)
+        self.assertIn('"algorithm": "SHA256"', output1)
+        self.assertIn('"referenceType": "cpe23Type"', output1)
+        self.assertIn('"sourceInfo":', output1)
+
+        # Verify determinism across multiple runs (no random UUID in namespace)
+        import json
+        doc1 = json.loads(output1)
+        doc2 = json.loads(output2)
+        self.assertEqual(doc1["documentNamespace"], doc2["documentNamespace"])
+        self.assertEqual(doc1["documentNamespace"], "https://spdx.org/spdxdocs/sample_project")
 
     def test_generate_csv(self):
         output = generate_sbom(target_path=str(self.sample_dir), format_name="csv")
