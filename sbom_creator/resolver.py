@@ -243,8 +243,12 @@ def enrich_components(components: List[Component], overrides: Optional[Dict[str,
                 base_purl = comp.purl.split("@")[0]
                 comp.purl = f"{base_purl}@{comp.version}"
 
-            # Update CPE version
-            comp.cpe = resolve_cpe23(comp.name, comp.version)
+        # Resolve or update CPE 2.3 for NVD matching
+        has_cpe_override = bool(override and override.get("cpe"))
+        if not has_cpe_override:
+            cpe_val = resolve_cpe23(comp.name, comp.version)
+            if cpe_val:
+                comp.cpe = cpe_val
 
         # 5. Locate authentic package artifact and compute true artifact checksums
         # 5a. If specified in config override (highest priority)

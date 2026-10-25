@@ -116,7 +116,13 @@ python3 main.py -c config.json -f spdx -o sbom.json
 3. **システムヘッダ解析 (C/C++)**: `/usr/include` 等のヘッダファイルから `ZLIB_VERSION`, `OPENSSL_VERSION` 等のマクロを抽出。
 4. **実行環境解析 (Python)**: `importlib.metadata` を参照して実インストールバージョンとライセンスを補完。
 5. **SPDX公式ライセンス辞書**: 主要な既知OSSライブラリ（curl, OpenSSL, zlib, SQLite, leptonica 等）のライセンスを自動付与。
-6. **設定ファイルによる上書き**: 設定ファイル内の `component_overrides` で手動での確実なバージョン・ライセンス・チェックサム上書きが可能。
+6. **NVD照合用 CPE 2.3 の自動マッピング**:
+   - C/C++ 等で purl による脆弱性照合（NVD/CVE）が困難・不安定になりがちな主要 OSS ライブラリ（OpenSSL, curl, SQLite, zlib, libuv, leptonica, libpng 等）について、CPE 2.3 形式（`cpe:2.3:a:vendor:product:version:*...`）の識別子を自動導出します。
+   - **SPDX**: `packages[].externalRefs`（`referenceCategory: "SECURITY"`, `referenceType: "cpe23Type"`）
+   - **CycloneDX**: `components[].cpe`
+   - **簡易JSON / CSV**: `cpe` 属性および `CPE` 列
+7. **設定ファイルによる上書き**:
+   - 設定ファイル内の `component_overrides` でバージョン・ライセンス・チェックサム（`sha256`, `package_file_name`）に加え、`cpe` も任意の文字列で上書き・指定が可能です。
 
 ### 基本的な実行
 

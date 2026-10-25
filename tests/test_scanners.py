@@ -83,7 +83,7 @@ class TestSBOMCreator(unittest.TestCase):
 
     def test_generate_csv(self):
         output = generate_sbom(target_path=str(self.sample_dir), format_name="csv")
-        self.assertTrue(output.startswith("Name,Version,Type,Language,PURL,License,Manifest/Source"))
+        self.assertTrue(output.startswith("Name,Version,Type,Language,PURL,CPE,License,Manifest/Source"))
 
 if __name__ == "__main__":
     unittest.main()

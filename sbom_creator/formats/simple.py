@@ -24,8 +24,13 @@ class SimpleJSONFormatter(BaseFormatter):
                     "type": c.component_type,
                     "language": c.language,
                     "purl": c.purl,
+                    "cpe": c.cpe,
                     "license": c.license,
                     "description": c.description,
+                    "checksums": [
+                        {"algorithm": cs.algorithm, "value": cs.value}
+                        for cs in c.checksums
+                    ],
                     "properties": c.properties
                 }
                 for c in doc.components
@@ -39,7 +44,7 @@ class CSVFormatter(BaseFormatter):
     def format(self, doc: SBOMDocument) -> str:
         output = io.StringIO()
         writer = csv.writer(output)
-        writer.writerow(["Name", "Version", "Type", "Language", "PURL", "License", "Manifest/Source"])
+        writer.writerow(["Name", "Version", "Type", "Language", "PURL", "CPE", "License", "Manifest/Source"])
 
         for c in doc.components:
             manifest = c.properties.get("manifest", c.properties.get("package_manager", ""))
@@ -49,6 +54,7 @@ class CSVFormatter(BaseFormatter):
                 c.component_type,
                 c.language or "",
                 c.purl or "",
+                c.cpe or "",
                 c.license or "",
                 manifest
             ])
