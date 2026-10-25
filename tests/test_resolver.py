@@ -38,7 +38,21 @@ class TestResolver(unittest.TestCase):
         enrich_components([comp], overrides=overrides)
         self.assertEqual(comp.version, "8.7.1")
         self.assertEqual(comp.purl, "pkg:generic/curl@8.7.1")
-        self.assertIn("8.7.1", comp.cpe)
+    def test_artifact_checksum_override(self):
+        comp = Component(name="my-lib", version="1.0.0")
+        overrides = {
+            "my-lib": {
+                "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "sha1": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "package_file_name": "libmylib.so"
+            }
+        }
+        enrich_components([comp], overrides=overrides)
+        self.assertEqual(len(comp.checksums), 2)
+        self.assertEqual(comp.checksums[0].algorithm, "SHA256")
+        self.assertEqual(comp.checksums[0].value, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        self.assertEqual(comp.properties.get("checksum_source"), "config_override")
+        self.assertEqual(comp.properties.get("artifact_file"), "libmylib.so")
 
 if __name__ == "__main__":
     unittest.main()

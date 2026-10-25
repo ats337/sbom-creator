@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 import importlib.metadata
 
-from sbom_creator.models import Component
+from sbom_creator.models import Component, Checksum
 from sbom_creator.cpe import resolve_cpe23
+from sbom_creator.checksum import compute_file_checksums
+from sbom_creator.artifact import find_package_artifact
 
 # Known SPDX licenses for common OSS libraries
 KNOWN_LICENSES: Dict[str, str] = {
@@ -164,6 +166,10 @@ def enrich_components(components: List[Component], overrides: Optional[Dict[str,
                 comp.cpe = str(override["cpe"])
             if "description" in override and override["description"]:
                 comp.description = str(override["description"])
+            if "package_file_name" in override and override["package_file_name"]:
+                comp.properties["artifact_file"] = str(override["package_file_name"])
+            elif "packageFileName" in override and override["packageFileName"]:
+                comp.properties["artifact_file"] = str(override["packageFileName"])
 
         # 2. Infer version if unknown
         if not comp.version or comp.version.lower() == "unknown":
@@ -239,3 +245,28 @@ def enrich_components(components: List[Component], overrides: Optional[Dict[str,
 
             # Update CPE version
             comp.cpe = resolve_cpe23(comp.name, comp.version)
+
+        # 5. Locate authentic package artifact and compute true artifact checksums
+        # 5a. If specified in config override (highest priority)
+        if override:
+            if "sha256" in override and override["sha256"]:
+                comp.checksums = [Checksum(algorithm="SHA256", value=str(override["sha256"]))]
+                if "sha1" in override and override["sha1"]:
+                    comp.checksums.append(Checksum(algorithm="SHA1", value=str(override["sha1"])))
+                comp.properties["checksum_source"] = "config_override"
+            elif "checksums" in override and isinstance(override["checksums"], list):
+                comp.checksums = [
+                    Checksum(algorithm=cs.get("algorithm", "SHA256"), value=cs.get("checksumValue", cs.get("value", "")))
+                    for cs in override["checksums"] if isinstance(cs, dict)
+                ]
+                comp.properties["checksum_source"] = "config_override"
+
+        # 5b. If not yet set, attempt to locate physical library/binary artifact on disk
+        if not comp.checksums:
+            artifact_path = find_package_artifact(comp, project_dir=project_dir)
+            if artifact_path and artifact_path.is_file():
+                art_cs = compute_file_checksums(artifact_path)
+                if art_cs:
+                    comp.checksums = art_cs
+                    comp.properties["artifact_file"] = str(artifact_path)
+                    comp.properties["checksum_source"] = "local_artifact"

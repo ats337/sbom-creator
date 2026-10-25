@@ -94,19 +94,24 @@ python3 main.py -c config.json -f spdx -o sbom.json
   "component_overrides": {
     "libz": {
       "version": "1.3.1",
-      "license": "Zlib"
+      "license": "Zlib",
+      "sha256": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+      "package_file_name": "libz.so.1.3.1"
     }
   }
 }
 ```
 
-#### バージョンおよびライセンスの自動補完機能
-マニフェストファイルにバージョンやライセンスが明記されていない場合でも、以下の機能により自動補完を試みます：
-1. **`pkg-config` 連携 (C/C++)**: ローカル環境の `pkg-config --modversion` を自動照会し、実インストールバージョンを取得。
-2. **システムヘッダ解析 (C/C++)**: `/usr/include` 等のヘッダファイルから `ZLIB_VERSION`, `OPENSSL_VERSION` 等のマクロを抽出。
-3. **実行環境解析 (Python)**: `importlib.metadata` を参照して実インストールバージョンとライセンスを補完。
-4. **SPDX公式ライセンス辞書**: 主要な既知OSSライブラリ（curl, OpenSSL, zlib, SQLite, leptonica 等）のライセンスを自動付与。
-5. **設定ファイルによる上書き**: 設定ファイル内の `component_overrides` で手動での確実なバージョン・ライセンス上書きが可能。
+#### パッケージ成果物チェックサムの分離と自動補完機能
+1. **成果物チェックサム (`checksums`) の厳格な分離**:
+   - マニフェストファイル（`Makefile` や `requirements.txt` 等）のハッシュはパッケージ自体のチェックサムとしては記録されません（`sourceInfo` や内部属性として分離保持）。
+   - パッケージ成果物（`.so`, `.dylib`, `.a`, `.dll`, `.whl` 等）の実体がローカルの vendored ディレクトリ、Homebrew Cellar、または `pkg-config --variable=libdir` 等で検出された場合にのみ、その成果物の `packageFileName` と実バイナリの `checksums`（SHA256, SHA1）を記録します。
+   - 成果物バイナリが存在しない依存関係に対しては誤ったハッシュの重複付与を行わず、必要に応じて `component_overrides`（`sha256`, `package_file_name`）により明示的に定義可能です。
+2. **`pkg-config` 連携 (C/C++)**: ローカル環境の `pkg-config --modversion` を自動照会し、実インストールバージョンを取得。
+3. **システムヘッダ解析 (C/C++)**: `/usr/include` 等のヘッダファイルから `ZLIB_VERSION`, `OPENSSL_VERSION` 等のマクロを抽出。
+4. **実行環境解析 (Python)**: `importlib.metadata` を参照して実インストールバージョンとライセンスを補完。
+5. **SPDX公式ライセンス辞書**: 主要な既知OSSライブラリ（curl, OpenSSL, zlib, SQLite, leptonica 等）のライセンスを自動付与。
+6. **設定ファイルによる上書き**: 設定ファイル内の `component_overrides` で手動での確実なバージョン・ライセンス・チェックサム上書きが可能。
 
 ### 基本的な実行
 

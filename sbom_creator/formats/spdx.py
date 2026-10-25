@@ -1,6 +1,7 @@
 """SPDX JSON Formatter (spec version 2.3) with full Relationships, Checksums, and Custom Metadata support."""
 import json
 import re
+from pathlib import Path
 from typing import Dict, Any, List
 from sbom_creator.models import SBOMDocument
 from sbom_creator.formats.base import BaseFormatter
@@ -92,19 +93,21 @@ class SPDXFormatter(BaseFormatter):
             if comp.description:
                 pkg["description"] = comp.description
 
-            # Record manifest / source info and its checksum in sourceInfo
+            # If an authentic artifact file was located, record its filename
+            if "artifact_file" in comp.properties:
+                pkg["packageFileName"] = Path(comp.properties["artifact_file"]).name
+                pkg["filesAnalyzed"] = True
+
+            # Record manifest reference in sourceInfo (clearly distinguished from artifact checksums)
             source_parts = []
             if "manifest" in comp.properties:
                 source_parts.append(f"manifest: {comp.properties['manifest']}")
             elif "source_file" in comp.properties:
                 source_parts.append(f"source: {comp.properties['source_file']}")
-            if "manifest_checksum_sha256" in comp.properties:
-                source_parts.append(f"manifest_sha256: {comp.properties['manifest_checksum_sha256']}")
-            elif "source_checksum_sha256" in comp.properties:
-                source_parts.append(f"source_sha256: {comp.properties['source_checksum_sha256']}")
             if source_parts:
                 pkg["sourceInfo"] = "; ".join(source_parts)
 
+            # Record authentic package artifact checksums in official checksums field
             if comp.checksums:
                 pkg["checksums"] = [
                     {
