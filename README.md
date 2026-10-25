@@ -90,9 +90,23 @@ python3 main.py -c config.json -f spdx -o sbom.json
   "download_location": "https://example.com/downloads/v1.0.0.tar.gz",
   "homepage": "https://example.com/project",
   "namespace_prefix": "https://example.com/spdxdocs",
-  "include_os": false
+  "include_os": false,
+  "component_overrides": {
+    "libz": {
+      "version": "1.3.1",
+      "license": "Zlib"
+    }
+  }
 }
 ```
+
+#### バージョンおよびライセンスの自動補完機能
+マニフェストファイルにバージョンやライセンスが明記されていない場合でも、以下の機能により自動補完を試みます：
+1. **`pkg-config` 連携 (C/C++)**: ローカル環境の `pkg-config --modversion` を自動照会し、実インストールバージョンを取得。
+2. **システムヘッダ解析 (C/C++)**: `/usr/include` 等のヘッダファイルから `ZLIB_VERSION`, `OPENSSL_VERSION` 等のマクロを抽出。
+3. **実行環境解析 (Python)**: `importlib.metadata` を参照して実インストールバージョンとライセンスを補完。
+4. **SPDX公式ライセンス辞書**: 主要な既知OSSライブラリ（curl, OpenSSL, zlib, SQLite, leptonica 等）のライセンスを自動付与。
+5. **設定ファイルによる上書き**: 設定ファイル内の `component_overrides` で手動での確実なバージョン・ライセンス上書きが可能。
 
 ### 基本的な実行
 

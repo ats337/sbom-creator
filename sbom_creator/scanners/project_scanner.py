@@ -163,9 +163,11 @@ class ProjectScanner(BaseScanner):
 
                 if file_comps:
                     file_cs = compute_file_checksums(file_path)
-                    for comp in file_comps:
-                        if not comp.checksums and file_cs:
-                            comp.checksums = list(file_cs)
+                    sha256_val = next((cs.value for cs in file_cs if cs.algorithm == "SHA256"), None)
+                    if sha256_val:
+                        for comp in file_comps:
+                            prop_key = "source_checksum_sha256" if "source_file" in comp.properties else "manifest_checksum_sha256"
+                            comp.properties[prop_key] = sha256_val
 
                 for comp in file_comps:
                     # De-duplicate by purl or (language, name, version)

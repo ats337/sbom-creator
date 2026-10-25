@@ -70,6 +70,7 @@ class TestSBOMCreator(unittest.TestCase):
         self.assertIn('"checksums": [', output)
         self.assertIn('"algorithm": "SHA256"', output)
         self.assertIn('"referenceType": "cpe23Type"', output)
+        self.assertIn('"sourceInfo":', output)
 
     def test_generate_csv(self):
         output = generate_sbom(target_path=str(self.sample_dir), format_name="csv")

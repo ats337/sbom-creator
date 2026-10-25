@@ -91,6 +91,20 @@ class SPDXFormatter(BaseFormatter):
             }
             if comp.description:
                 pkg["description"] = comp.description
+
+            # Record manifest / source info and its checksum in sourceInfo
+            source_parts = []
+            if "manifest" in comp.properties:
+                source_parts.append(f"manifest: {comp.properties['manifest']}")
+            elif "source_file" in comp.properties:
+                source_parts.append(f"source: {comp.properties['source_file']}")
+            if "manifest_checksum_sha256" in comp.properties:
+                source_parts.append(f"manifest_sha256: {comp.properties['manifest_checksum_sha256']}")
+            elif "source_checksum_sha256" in comp.properties:
+                source_parts.append(f"source_sha256: {comp.properties['source_checksum_sha256']}")
+            if source_parts:
+                pkg["sourceInfo"] = "; ".join(source_parts)
+
             if comp.checksums:
                 pkg["checksums"] = [
                     {

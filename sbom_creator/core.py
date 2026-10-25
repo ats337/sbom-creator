@@ -9,6 +9,7 @@ from sbom_creator.scanners.project_scanner import ProjectScanner
 from sbom_creator.formats import get_formatter
 from sbom_creator.checksum import compute_file_checksums, compute_content_checksums
 from sbom_creator.cpe import resolve_cpe23
+from sbom_creator.resolver import enrich_components
 
 def generate_sbom(
     target_path: str = ".",
@@ -79,13 +80,9 @@ def generate_sbom(
         project_scanner = ProjectScanner(root_dir=str(target_dir))
         components.extend(project_scanner.scan())
 
-    # Ensure all components have checksums and CPE 2.3 if resolvable
-    for comp in components:
-        if not comp.checksums:
-            identity_str = comp.purl or f"{comp.component_type}:{comp.name}@{comp.version}"
-            comp.checksums = compute_content_checksums(identity_str.encode("utf-8"))
-        if not comp.cpe:
-            comp.cpe = resolve_cpe23(comp.name, comp.version)
+    # Enrich components with missing versions, licenses, and apply config overrides
+    component_overrides = cfg.get("component_overrides") or {}
+    enrich_components(components, overrides=component_overrides, project_dir=target_dir if target_dir.exists() else None)
 
     doc = SBOMDocument(metadata=metadata, components=components)
     formatter = get_formatter(effective_format)

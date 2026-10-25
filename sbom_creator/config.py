@@ -35,6 +35,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "include_os": False,
     "os_only": False,
     "scan_os_packages": True,
+    "component_overrides": {},
 }
 
 def load_config_file(config_path: str) -> Dict[str, Any]:

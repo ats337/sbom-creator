@@ -12,5 +12,11 @@
   "download_location": "https://github.com/example/my-legacy-system/releases/v2.4.0",
   "homepage": "https://example.com/products/legacy-system",
   "namespace_prefix": "https://example.com/spdxdocs",
-  "include_os": false
+  "include_os": false,
+  "component_overrides": {
+    "libz": {
+      "version": "1.3.1",
+      "license": "Zlib"
+    }
+  }
 }
